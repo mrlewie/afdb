@@ -272,8 +272,6 @@ Item {
                         }
                     }
 
-
-
                     Item {
                         id: movieDetailsCoreSynopsis
                         height: 73
@@ -339,10 +337,12 @@ Item {
 
                                 onClicked: {
                                     if (isExpanded == false) {
+                                        movieDetailsRow.height = 600
                                         movieDetailsCoreSynopsis.height = 300
                                         isExpanded = true
                                     }
                                     else {
+                                        movieDetailsRow.height = 400
                                         movieDetailsCoreSynopsis.height = 100
                                         isExpanded = false
                                     }
@@ -354,8 +354,11 @@ Item {
             }
 
             Rectangle {
+                id: tempRectangle1
                 height: 200
                 anchors {
+                    top: movieDetailsRow.bottom
+                    topMargin: 23
                     left: parent.left
                     right: parent.right
                 }
@@ -364,8 +367,11 @@ Item {
             }
 
             Rectangle {
+                id: tempRectangle2
                 height: 2000
                 anchors {
+                    top: tempRectangle1.bottom
+                    topMargin: 10
                     left: parent.left
                     right: parent.right
                 }
@@ -376,11 +382,3 @@ Item {
     }
 }
 
-
-
-
-/*##^##
-Designer {
-    D{i:0;formeditorZoom:0.5;height:1080;width:1920}
-}
-##^##*/
