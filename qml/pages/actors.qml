@@ -1,5 +1,6 @@
-import QtQuick 2.0
+import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Layouts 2.15
 
 Rectangle {
     anchors.fill: parent
