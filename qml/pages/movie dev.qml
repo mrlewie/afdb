@@ -38,8 +38,7 @@ Item {
 
       Rectangle {
         id: movieRootDetailsContainer
-        Layout.preferredHeight: 500
-        //implicitHeight: 500  // need this... hence rectangle
+        Layout.preferredHeight: 450
         anchors.fill: parent
         color: "transparent"
 
@@ -51,6 +50,7 @@ Item {
           flow: GridLayout.TopToBottom
           Rectangle {anchors.fill: parent; color: "red"; opacity: 0.2}
 
+          // details grid: cover image
           Image {
             id: movieDetailsCoverImage
             Layout.minimumWidth: 292
@@ -73,6 +73,7 @@ Item {
             cache: true
           }
 
+          // details grid: title
           Label {
             id: movieDetailsMainTitleLabel
             Layout.preferredHeight: 25
@@ -93,6 +94,7 @@ Item {
             Rectangle {anchors.fill: parent; color: "red"; opacity: 0.2}
           }
 
+          // details grid: year, age, rating
           Flow {
             id: movieDetailsYearAgeRatingFlow
             Layout.preferredHeight: 25
@@ -146,6 +148,7 @@ Item {
             }
           }
 
+          // details grid: acts
           Flow {
             id: movieDetailsActsFlow
             Layout.preferredHeight: 25
@@ -156,7 +159,7 @@ Item {
               top: movieDetailsYearAgeRatingFlow.bottom
               topMargin: 10
             }
-            spacing: 3
+            spacing: 5
 
             Repeater {
               id: movieDetailsActsRepeater
@@ -164,6 +167,89 @@ Item {
               delegate: MovieActTag {actTagText: modelData.act}
             }
           }
+
+          // details grid: play, watched, favourite, edit, more
+          Flow {
+            id: movieDetailsButtonsFlow
+            Layout.minimumWidth: 250
+            Layout.preferredHeight: 35
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.margins: 15
+            anchors {
+              top: movieDetailsActsFlow.bottom
+              topMargin: 25
+            }
+            spacing: 10
+
+            MoviePlayButton {}
+
+            MovieWatchedButton {}
+
+            MovieEditButton {}
+
+            MovieMoreButton {}
+          }
+
+          // details grid: general information
+          Flow {
+            id: movieDetailsInformationFlow
+            Layout.maximumHeight: 100
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.margins: 15
+            anchors {
+              top: movieDetailsButtonsFlow.bottom
+              topMargin: 25
+            }
+            spacing: 5
+            flow: Flow.TopToBottom
+
+            Repeater {
+              id: movieDetailsInformationRepeater
+              model: [["Length", "1 hr 47 mins"], ["Directed by", "Raymond Balboa"], ["Distributor", ""], ["Studio", "LFP Video Inc"],
+                      ["All-Girl", "No"], ["Compilation", "No"], ["Video", "540p (H.264)"], ["Audio", "English (AAC Stereo)"]]  // do pyside
+              delegate:
+
+                Row {
+                  height: 20
+                  spacing: 5
+
+                Label {
+                    width: 125
+                    height: 20
+                    text: modelData[0]
+                    color: "#d8d8d8"
+                    font {
+                        family: "Arial"
+                        pixelSize: 12
+                        weight: Font.Bold
+                        capitalization: Font.AllUppercase
+                    }
+                    opacity: 0.75
+                    verticalAlignment: Text.AlignVCenter
+                    //background: Rectangle {anchors.fill: parent; color: "aqua"; opacity: 0.25}
+                    visible: modelData[1] != "" ? true : false
+                }
+
+                Label {
+                    width: 200
+                    height: 20
+                    text: modelData[1]
+                    color: "white"
+                    font {
+                        family: "Arial"
+                        pixelSize: 15
+                        weight: Font.Normal
+                    }
+                    verticalAlignment: Text.AlignVCenter
+                    //background: Rectangle {anchors.fill: parent; color: "aqua"; opacity: 0.25}
+                    visible: modelData[1] != "" ? true : false
+                }
+              }
+            }
+          }
+
         }
       }
     }
