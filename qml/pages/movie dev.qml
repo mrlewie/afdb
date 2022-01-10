@@ -10,14 +10,28 @@ import "../labels"
 import "../tags"
 
 Item {
-  property int inImageWidth: 584 / 4
-  property int inImageHeight: 832 / 4
+  property variant movieModel
 
   id: movieContainer
   anchors.fill: parent
 
   SubBar {
     id: subBar
+
+    // temp
+    Button {
+      width: 75
+      height: 25
+      text: "Back"
+      anchors {
+        top: parent.top
+        left: parent.left
+      }
+      onClicked: {
+        moviesStackView.pop()
+        mainWindow.backgroundImageUrl = ""
+      }
+    }
   }
 
   ScrollView {
@@ -33,8 +47,6 @@ Item {
       id: movieRootColumnContainer
       anchors.fill: parent
       spacing: 20
-      //model: moviesModel
-      //delegate: Loader {}
 
       Rectangle {
         id: movieRootDetailsContainer
@@ -46,9 +58,9 @@ Item {
           id: movieDetailsGrid
           anchors.fill: parent
           columns: 2
-          rows: 5
+          rows: 6
           flow: GridLayout.TopToBottom
-          Rectangle {anchors.fill: parent; color: "red"; opacity: 0.2}
+          //Rectangle {anchors.fill: parent; color: "red"; opacity: 0.2}
 
           // details grid: cover image
           Image {
@@ -61,8 +73,9 @@ Item {
             Layout.fillHeight: true
             Layout.alignment: Qt.AlignTop
             Layout.margins: 15
-            Layout.rowSpan: 5
-            source: "file:///" + "g:/Images/Covers/134569.jpg"
+            Layout.leftMargin: 25
+            Layout.rowSpan: 6
+            source: "file:///" + movieModel.r_img_cover
             sourceSize {
               width: 292
               height: 416
@@ -76,13 +89,15 @@ Item {
           // details grid: title
           Label {
             id: movieDetailsMainTitleLabel
+            Layout.minimumWidth: 250
+            Layout.maximumWidth: 800
             Layout.preferredHeight: 25
             Layout.fillWidth: true
             Layout.fillHeight: false
             Layout.alignment: Qt.AlignTop
             Layout.margins: 15
             Layout.topMargin: 25
-            text: "Latina Anal Heartbreakers and Other Dirty Butt Fucking Sluts 2: The Revenge"   //i_title ? i_title : r_title
+            text: movieModel.i_title ? movieModel.i_title : movieModel.r_title
             color: "white"
             font {
               family: "Arial"
@@ -91,7 +106,7 @@ Item {
             }
             verticalAlignment: Text.AlignVCenter
             elide: Label.ElideRight
-            Rectangle {anchors.fill: parent; color: "red"; opacity: 0.2}
+            //Rectangle {anchors.fill: parent; color: "red"; opacity: 0.2}
           }
 
           // details grid: year, age, rating
@@ -110,7 +125,7 @@ Item {
             Label {
               id: movieDetailsYearLabel
               height: 25
-              text: "2002" //i_year ? i_year : r_year
+              text: movieModel.i_year ? movieModel.i_year : movieModel.r_year
               color: "white"
               font {
                 family: "Arial"
@@ -151,6 +166,8 @@ Item {
           // details grid: acts
           Flow {
             id: movieDetailsActsFlow
+            Layout.minimumWidth: 250
+            Layout.maximumWidth: 400
             Layout.preferredHeight: 25
             Layout.fillWidth: true
             Layout.fillHeight: false
@@ -160,11 +177,12 @@ Item {
               topMargin: 10
             }
             spacing: 5
+            visible: movieModel.i_acts != "" ? true : false
 
             Repeater {
               id: movieDetailsActsRepeater
-              model: [{"act": "Anal"}, {"act": "Double Anal"}, {"act": "Double Penetration"}, {"act": "Facial"}]  // do pyside
-              delegate: MovieActTag {actTagText: modelData.act}
+              model: movieModel.i_acts.split(', ')
+              delegate: MovieActTag {actTagText: modelData}
             }
           }
 
@@ -191,10 +209,12 @@ Item {
             MovieMoreButton {}
           }
 
-          // details grid: general information
           Flow {
             id: movieDetailsInformationFlow
-            Layout.maximumHeight: 100
+            Layout.minimumWidth: 350
+            Layout.maximumWidth: 800
+            Layout.minimumHeight: 0
+            Layout.maximumHeight: 80
             Layout.fillWidth: true
             Layout.fillHeight: false
             Layout.margins: 15
@@ -202,56 +222,111 @@ Item {
               top: movieDetailsButtonsFlow.bottom
               topMargin: 25
             }
+            flow: Flow.LeftToRight
             spacing: 5
-            flow: Flow.TopToBottom
 
             Repeater {
               id: movieDetailsInformationRepeater
-              model: [["Length", "1 hr 47 mins"], ["Directed by", "Raymond Balboa"], ["Distributor", ""], ["Studio", "LFP Video Inc"],
-                      ["All-Girl", "No"], ["Compilation", "No"], ["Video", "540p (H.264)"], ["Audio", "English (AAC Stereo)"]]  // do pyside
+              model: [
+                ["Length", "todo"],
+                ["Directed by", "to, do".split(', ')],
+                ["Distributor", movieModel.i_distributor],
+                ["Studio", movieModel.i_distributor],
+                ["All-Girl", "todo"],
+                ["Compilation", movieModel.compilation],
+                ["Video", "todo"],
+                ["Audio", "todo"]
+              ]
               delegate:
 
-                Row {
-                  height: 20
-                  spacing: 5
+              Row {
+                id: movieDetailsInformationRow
 
                 Label {
-                    width: 125
-                    height: 20
-                    text: modelData[0]
-                    color: "#d8d8d8"
-                    font {
-                        family: "Arial"
-                        pixelSize: 12
-                        weight: Font.Bold
-                        capitalization: Font.AllUppercase
-                    }
-                    opacity: 0.75
-                    verticalAlignment: Text.AlignVCenter
-                    //background: Rectangle {anchors.fill: parent; color: "aqua"; opacity: 0.25}
-                    visible: modelData[1] != "" ? true : false
+                  id: movieDetailsInformationLabel
+                  width: 125
+                  height: 20
+                  text: modelData[0]
+                  color: "#d8d8d8"
+                  font {
+                    family: "Arial"
+                    pixelSize: 12
+                    weight: Font.Bold
+                    capitalization: Font.AllUppercase
+                  }
+                  opacity: 0.75
+                  verticalAlignment: Text.AlignVCenter
+                  //background: Rectangle {anchors.fill: parent; color: "aqua"; opacity: 0.25}
+                  visible: modelData[1] != "" ? true : false
                 }
 
                 Label {
-                    width: 200
-                    height: 20
-                    text: modelData[1]
-                    color: "white"
-                    font {
-                        family: "Arial"
-                        pixelSize: 15
-                        weight: Font.Normal
-                    }
-                    verticalAlignment: Text.AlignVCenter
-                    //background: Rectangle {anchors.fill: parent; color: "aqua"; opacity: 0.25}
-                    visible: modelData[1] != "" ? true : false
+                  id: movieDetailsInformationValue
+                  width: 225
+                  height: 20
+                  text: modelData[1]
+                  color: "white"
+                  font {
+                    family: "Arial"
+                    pixelSize: 15
+                    weight: Font.Normal
+                  }
+                  verticalAlignment: Text.AlignVCenter
+                  //background: Rectangle {anchors.fill: parent; color: "aqua"; opacity: 0.25}
+                  visible: modelData[1] != "" ? true : false
                 }
               }
             }
           }
 
+          // details grid: synopsis
+          Text {
+            id: movieDetailsSynopsisText
+            Layout.minimumWidth: 0
+            Layout.maximumWidth: 800
+            Layout.minimumHeight: 0
+            Layout.maximumHeight: 75
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.margins: 15
+            anchors {
+              top: movieDetailsInformationFlow.bottom
+              topMargin: 40 // huh? should it be 25?
+            }
+            text: movieModel.i_synopsis
+            color: "white"
+            font {
+              family: "Arial"
+              pixelSize: 15
+              weight: Font.Normal
+            }
+            lineHeight: 1.5
+            verticalAlignment: Text.AlignTop
+            wrapMode: Text.WordWrap
+            clip: true
+            visible: movieModel.i_synopsis != "" ? true : false
+          }
+
+          MovieReadMoreButton {
+            id: movieDetailsSynopsisExpandButton
+            Layout.preferredWidth: 100
+            Layout.preferredHeight: 20
+            Layout.fillWidth: true
+            Layout.fillHeight: false
+            Layout.margins: 15
+            anchors {
+              top: movieDetailsSynopsisText.bottom
+              left: movieDetailsSynopsisText.left
+              topMargin: 2
+            }
+            visible: movieModel.i_synopsis != "" ? true : false
+          }
         }
       }
     }
+  }
+
+  Component.onCompleted: {
+    mainWindow.backgroundImageUrl = "file:///" + movieModel.r_img_cover  // set background image
   }
 }

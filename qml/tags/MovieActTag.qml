@@ -18,7 +18,6 @@ Label {
     }
     color: "#d8d8d8"
     verticalAlignment: Text.AlignVCenter
-
     background: Rectangle {
         id: actTagBackgroundColor
         color: "black"

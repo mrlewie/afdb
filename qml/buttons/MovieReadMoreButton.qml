@@ -7,7 +7,7 @@ Label {
     color: "#d8d8d8"
     font {
         family: "Arial"
-        pixelSize: 13
+        pixelSize: 12
         weight: Font.Bold
         capitalization: Font.AllUppercase
     }

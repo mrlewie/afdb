@@ -308,8 +308,10 @@ class MoviesModel(QAbstractListModel):
 
     # https://stackoverflow.com/questions/59853985/how-do-to-get-single-item-detail-page-from-listview-page-using-qml todo see here
     @Slot(int)
-    def get_movie(self, index, role=Qt.DisplayRole):
+    def get_movie(self, index): #role=Qt.DisplayRole):
         movie = self.movies[index]
+        movie = {'i_title': 'Tester!!!'}
+
         return movie
 
     @Slot(str)
@@ -821,3 +823,6 @@ def sync_covers(db=None):
             query_update.exec()
 
 
+@Slot(str)
+def get_acts_list(acts_as_string):
+    print('hi!')

@@ -1,5 +1,6 @@
 import sys
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from scripts import data
@@ -12,6 +13,8 @@ if __name__ == "__main__":
 
     # init app, db
     app = QGuiApplication(sys.argv)
+    app.setAttribute(Qt.AA_UseOpenGLES)
+    app.setAttribute(Qt.AA_DisableShaderDiskCache)
 
     # init engine and load qml file
     engine = QQmlApplicationEngine()

@@ -292,7 +292,7 @@ Rectangle {
 
                 // studio label
                 Label {
-                    id: studioLabel                   
+                    id: studioLabel
                     width: 120
                     height: 25
                     anchors {
@@ -311,7 +311,7 @@ Rectangle {
 
                 // studio value
                 Label {
-                    id: studioValue                   
+                    id: studioValue
                     width: 500
                     height: 25
                     anchors {
@@ -331,7 +331,7 @@ Rectangle {
 
                 // compilation label
                 Label {
-                    id: compilationLabel              
+                    id: compilationLabel
                     width: 120
                     height: 25
                     anchors {
@@ -350,7 +350,7 @@ Rectangle {
 
                 // compilation value
                 Label {
-                    id: compilationValue                   
+                    id: compilationValue
                     width: 500
                     height: 25
                     anchors {
@@ -735,17 +735,11 @@ Rectangle {
                                 }
 
                             }
-
-
-
-
-
-
                         }
                     }
                 }
             }
-        }   
+        }
     }
 }
 

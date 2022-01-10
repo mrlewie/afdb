@@ -74,8 +74,6 @@ Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.minimumWidth: 200
-                    //Layout.preferredWidth: movieContainer.width
-                    //Layout.maximumWidth: movieContainer.width
                     Layout.minimumHeight: 316   // movie cover - 100
                     Layout.preferredHeight: 416  // same as movie cover
                     Layout.maximumHeight: 516    // movie cover + 100
