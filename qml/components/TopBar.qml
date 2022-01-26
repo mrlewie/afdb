@@ -54,7 +54,7 @@ Item {
                 topMargin: 5
                 bottomMargin: 5
             }
-            text: "ADB"
+            text: "AFDB"
             verticalAlignment: Text.AlignVCenter
             font {
                 family: "Arial"

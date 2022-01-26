@@ -86,6 +86,7 @@ Item {
                     height: cardImageArea.height
                     radius: width * 0.5
                     visible: false
+                    cache: true
                 }
             }
 

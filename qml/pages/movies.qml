@@ -4,6 +4,7 @@ import QtQuick.Layouts 2.15
 import Qt5Compat.GraphicalEffects
 
 import "../controls"
+import "../components"
 
 Rectangle {
   property double inImageDivider: 3.5
@@ -44,50 +45,47 @@ Rectangle {
       anchors.fill: parent
       leftMargin: 20
       topMargin: 10
-      cellWidth: imgWidth   + 30  // only way to space
-      cellHeight: imgHeight + 80  // only way to space
+      cellWidth: imgWidth   + 30              // only way to space, 30 pixesl between
+      cellHeight: imgHeight + (30 + 20) + 50  // only way to space, (title + year) + 50 pixels
       clip: true
       //cacheBuffer: 25000 // increase this to hold cards in memory longer
       model: moviesModel
       delegate: Loader {
 
-        MoviesCard {
+        MoviesCoverCard {
           id: card
-          inMovieTitle: i_title ? i_title : r_title
-          inMovieYear: i_year ? i_year : r_year
-          inImageSource: r_img_cover
-          inImageWidth: imgWidth
-          inImageHeight: imgHeight
+          imageSource: "file:///" + img_fcover_filename
+          imageSourceWidth: imgWidth
+          imageSourceHeight: imgHeight
+          title: iafd_title ? iafd_title : raw_title
+          year: iafd_year ? iafd_year : raw_year
 
-          // mouse functions
-          MouseArea {
-            id: cardImageMouseArea
-            anchors.fill: parent
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
-            cursorShape: Qt.PointingHandCursor
-            enabled: true
+          moviesCardClicked.onClicked: {
+            castModel.get_cast(raw_folder)      // filter to cast of current movie
+            scenesModel.get_scenes(raw_folder)  // filter to scenes of current movie
+            moviesStackView.push("movie dev.qml", {'movieModel': model})  // move to movie page
+          }
 
-            // clicked on mouse area
-            onClicked: {
-              if (mouse.button == Qt.LeftButton) {
+          moviesTitleClicked.onClicked: {
+            castModel.get_cast(raw_folder)      // filter to cast of current movie
+            scenesModel.get_scenes(raw_folder)  // filter to scenes of current movie
+            moviesStackView.push("movie dev.qml", {'movieModel': model})  // move to movie page
+          }
 
-                // filter cast model to current movie
-                castModel.get_cast(r_id)
+          moviesSelectClicked.onClicked: {
+            moviesModel.log('Select clicked! todo...')
+          }
 
-                // filter scene model to current movie
-                scenesModel.get_scenes(r_id)
+          moviesEditClicked.onClicked: {
+            moviesModel.log('Edit clicked! todo...')
+          }
 
-                // move to movie page
-                moviesStackView.push("movie dev.qml", {'movieModel': model})
-              }
-              else if (mouse.button == Qt.RightButton) {
-                moviesModel.sync_with_iafd_worker(index, r_id, r_title, r_year)
-              }
-            }
+          moviesMoreClicked.onClicked: {
+            moviesModel.log('Fetching metadata! todo...')
+            moviesModel.sync_with_iafd_worker(index, raw_folder, raw_title, raw_year)
           }
         }
       }
     }
   }
-
 }

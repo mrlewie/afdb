@@ -2,14 +2,17 @@
 import os
 import re
 import uuid
+from subprocess import call
 
-from PySide6.QtCore import Qt, Slot, QRunnable, QThreadPool, QAbstractListModel, QModelIndex
+from PySide6.QtCore import Qt, Slot, QRunnable, QThreadPool, QAbstractListModel, QModelIndex, QObject
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
-from scripts import scrapers
+from scripts import scraper_iafd, scraper_aebn
 
 # globals
-MOVIE_FOLDER = r'G:\Film\Complete'
+MOVIES_FOLDER = r'G:\Film\Complete'
 DB_FOLDER = r'.\db\adb.db'
+
+# https://wiki.qt.io/Selectable-list-of-Python-objects-in-QML good listmodel to object
 
 
 class MoviesModel(QAbstractListModel):
@@ -29,19 +32,28 @@ class MoviesModel(QAbstractListModel):
 
     def roleNames(self):
         roles = {
-            hash(Qt.UserRole):      'r_folder'.encode(),
-            hash(Qt.UserRole + 1):  'r_id'.encode(),
-            hash(Qt.UserRole + 2):  'r_title'.encode(),
-            hash(Qt.UserRole + 3):  'r_year'.encode(),
-            hash(Qt.UserRole + 4):  'i_id'.encode(),
-            hash(Qt.UserRole + 5):  'i_title'.encode(),
-            hash(Qt.UserRole + 6):  'i_year'.encode(),
-            hash(Qt.UserRole + 7):  'i_distributor'.encode(),
-            hash(Qt.UserRole + 8):  'i_studio'.encode(),
-            hash(Qt.UserRole + 9):  'i_compilation'.encode(),
-            hash(Qt.UserRole + 10): 'i_synopsis'.encode(),
-            hash(Qt.UserRole + 11): 'i_acts'.encode(),
-            hash(Qt.UserRole + 12): 'r_img_cover'.encode()
+            hash(Qt.UserRole):      'raw_folder'.encode(),
+            hash(Qt.UserRole + 1):  'raw_title'.encode(),
+            hash(Qt.UserRole + 2):  'raw_year'.encode(),
+            hash(Qt.UserRole + 3):  'iafd_title'.encode(),
+            hash(Qt.UserRole + 4):  'iafd_year'.encode(),
+            hash(Qt.UserRole + 5):  'iafd_length'.encode(),
+            hash(Qt.UserRole + 6):  'iafd_directors'.encode(),
+            hash(Qt.UserRole + 7):  'iafd_distributor'.encode(),
+            hash(Qt.UserRole + 8):  'iafd_studio'.encode(),
+            hash(Qt.UserRole + 9):  'iafd_all_girl'.encode(),
+            hash(Qt.UserRole + 10): 'iafd_compilation'.encode(),
+            hash(Qt.UserRole + 11): 'iafd_synopsis'.encode(),
+            hash(Qt.UserRole + 12): 'iafd_acts'.encode(),
+            hash(Qt.UserRole + 13): 'aebn_title'.encode(),
+            hash(Qt.UserRole + 14): 'aebn_year'.encode(),
+            hash(Qt.UserRole + 15): 'aebn_series'.encode(),
+            hash(Qt.UserRole + 16): 'aebn_synopsis'.encode(),
+            hash(Qt.UserRole + 17): 'img_fcover_filename'.encode(),
+            hash(Qt.UserRole + 18): 'img_bcover_filename'.encode(),
+            hash(Qt.UserRole + 19): 'vid_filename'.encode(),
+            hash(Qt.UserRole + 20): 'progress'.encode(),
+            hash(Qt.UserRole + 21): 'info_lock'.encode()
         }
 
         return roles
@@ -71,26 +83,35 @@ class MoviesModel(QAbstractListModel):
         db = connect_to_db('movies_get')
 
         # query db
-        query = QSqlQuery(query='SELECT * FROM MOVIE ORDER BY r_id', db=db)
+        query = QSqlQuery(query='SELECT * FROM MOVIES ORDER BY raw_folder', db=db)
         query.exec()
 
         # reset movies list and repopulate it
         self.movies = []
         while query.next():
             self.movies.append({
-                'r_folder': query.value(0),
-                'r_id': query.value(1),
-                'r_title': query.value(2),
-                'r_year': query.value(3),
-                'i_id': query.value(4),
-                'i_title': query.value(5),
-                'i_year': query.value(6),
-                'i_distributor': query.value(7),
-                'i_studio': query.value(8),
-                'i_compilation': query.value(9),
-                'i_synopsis': query.value(10),
-                'i_acts': query.value(11),
-                'r_img_cover': query.value(12)
+                'raw_filename': query.value(0),
+                'raw_title': query.value(1),
+                'raw_year': query.value(2),
+                'iafd_title': query.value(3),
+                'iafd_year': query.value(4),
+                'iafd_length': query.value(5),
+                'iafd_directors': query.value(6),
+                'iafd_distributor': query.value(7),
+                'iafd_studio': query.value(8),
+                'iafd_all_girl': query.value(9),
+                'iafd_compilation': query.value(10),
+                'iafd_synopsis': query.value(11),
+                'iafd_acts': query.value(12),
+                'aebn_title': query.value(13),
+                'aebn_year': query.value(14),
+                'aebn_series': query.value(15),
+                'aebn_synopsis': query.value(16),
+                'img_fcover_filename': query.value(17),
+                'img_bcover_filename': query.value(18),
+                'vid_filename': query.value(19),
+                'progress': query.value(20),
+                'info_lock': query.value(21)
             })
 
         # end and emit the reset
@@ -100,16 +121,16 @@ class MoviesModel(QAbstractListModel):
         db.close()
 
     @staticmethod  # todo get around update whole page by using self, see add_movie
-    def update_movie(r_id, result):
+    def update_movie(raw_folder, result):
         """
 
-        :param r_id:
+        :param raw_folder:
         :param result:
         :return:
         """
 
         # notify
-        print('Updating movie id: {} with IAFD metadata: {}'.format(r_id, result))
+        print('Updating movie id: {} with IAFD metadata: {}'.format(raw_folder, result))
 
         # open db
         db_conn = uuid.uuid4().hex
@@ -117,25 +138,38 @@ class MoviesModel(QAbstractListModel):
 
         # update movie record
         query = QSqlQuery(db=db)
-        query.prepare('UPDATE MOVIE '
-                      'SET i_id =  :i_id, '
-                      'i_title = :i_title, '
-                      'i_year = :i_year, '
-                      'i_distributor = :i_distributor, '
-                      'i_studio = :i_studio, '
-                      'i_compilation = :i_compilation, '
-                      'i_synopsis = :i_synopsis, '
-                      'i_acts = :i_acts '
-                      'WHERE r_id = :r_id')
-        query.bindValue(':i_id', result.get('id'))
-        query.bindValue(':i_title', result.get('title'))
-        query.bindValue(':i_year', result.get('year'))
-        query.bindValue(':i_distributor', result.get('distributor'))
-        query.bindValue(':i_studio', result.get('studio'))
-        query.bindValue(':i_compilation', result.get('compilation'))
-        query.bindValue(':i_synopsis', result.get('synopsis'))
-        query.bindValue(':i_acts', result.get('acts'))
-        query.bindValue(':r_id', r_id)
+        query.prepare('UPDATE MOVIES SET '
+                      'iafd_title =  :iafd_title, '
+                      'iafd_year = :iafd_year, '
+                      'iafd_length = :iafd_length, '
+                      'iafd_directors = :iafd_directors, '
+                      'iafd_distributor = :iafd_distributor, '
+                      'iafd_studio = :iafd_studio, '
+                      'iafd_all_girl = :iafd_all_girl, '
+                      'iafd_compilation = :iafd_compilation, '
+                      'iafd_synopsis = :iafd_synopsis, '
+                      'iafd_acts = :iafd_acts, '
+                      'aebn_title = :aebn_title, '           
+                      'aebn_year = :aebn_year, '           
+                      'aebn_series = :aebn_series, '           
+                      'aebn_synopsis = :aebn_synopsis '           
+                      'WHERE raw_folder = :raw_folder')
+
+        query.bindValue(':iafd_title', result.get('iafd_title'))
+        query.bindValue(':iafd_year', result.get('iafd_year'))
+        query.bindValue(':iafd_length', result.get('iafd_length'))
+        query.bindValue(':iafd_directors', result.get('iafd_directors'))
+        query.bindValue(':iafd_distributor', result.get('iafd_distributor'))
+        query.bindValue(':iafd_studio', result.get('iafd_studio'))
+        query.bindValue(':iafd_all_girl', result.get('iafd_all_girl'))
+        query.bindValue(':iafd_compilation', result.get('iafd_compilation'))
+        query.bindValue(':iafd_synopsis', result.get('iafd_synopsis'))
+        query.bindValue(':iafd_acts', result.get('iafd_acts'))
+        query.bindValue(':aebn_title', result.get('aebn_title'))
+        query.bindValue(':aebn_year', result.get('aebn_year'))
+        query.bindValue(':aebn_series', result.get('aebn_series'))
+        query.bindValue(':aebn_synopsis', result.get('aebn_synopsis'))
+        query.bindValue(':raw_folder', raw_folder)
         query.exec()
 
         # close db
@@ -144,7 +178,6 @@ class MoviesModel(QAbstractListModel):
     @staticmethod
     def insert_cast(r_id, actor):
         """
-
         :param r_id:
         :param actor:
         :return:
@@ -219,15 +252,18 @@ class MoviesModel(QAbstractListModel):
         db.close()
 
     @Slot(int, str, str, str)
-    def sync_with_iafd_worker(self, index, r_id, r_title, r_year):
+    def sync_with_iafd_worker(self, index, raw_folder, raw_title, raw_year):
 
         # set up kwargs dict
         kwargs = {
             'index': index,
-            'r_id': r_id,
-            'r_title': r_title,
-            'r_year': r_year,
+            'raw_folder': raw_folder,
+            'raw_title': raw_title,
+            'raw_year': raw_year,
         }
+
+        #self._sync_with_iafd(**kwargs)
+        #raise
 
         # create worker
         worker = Worker(self._sync_with_iafd, **kwargs)
@@ -235,55 +271,65 @@ class MoviesModel(QAbstractListModel):
         # add to app global threadpool
         QThreadPool.globalInstance().start(worker)
 
-    def _sync_with_iafd(self, index, r_id, r_title, r_year):
+    def _sync_with_iafd(self, index, raw_folder, raw_title, raw_year):
 
         # notify
-        print('Clicked movie card title: {} and year: {}.'.format(r_title, r_year))
+        print('Clicked movie card title: {} and year: {}.'.format(raw_title, raw_year))
 
         # send to iafd search query scraper
-        results = scrapers.get_iafd_search_results(r_title, r_year)
-
-        # pick best result if exist
+        results = scraper_iafd.get_iafd_search_results(raw_title, raw_year)
         if len(results) > 0:
-            best_result = scrapers.get_best_iafd_search_match(results)
+
+            # pick best result if exist
+            best_result = scraper_iafd.get_best_iafd_search_match(results)
 
             # extract iafd movie metadata from html
-            iafd_url = scrapers.IAFD_ROOT + best_result.get('url')
-            iafd_html_content = scrapers.get_html_from_url(iafd_url)
-            result = scrapers.get_all_meta_from_movie_html(iafd_html_content)
+            iafd_url = scraper_iafd.IAFD_ROOT + best_result.get('url')
+            iafd_html_content = scraper_iafd.get_html_from_url(iafd_url)
+            result_iafd = scraper_iafd.get_all_meta_from_movie_html(iafd_html_content)
 
             # notify
-            print('Found iafd movie metadata: {}'.format(result))
+            print('Found iafd movie metadata: {}'.format(result_iafd))
+
+            # send shop urls to aebn scraper to get associated movie
+            result_aebn = scraper_aebn.get_aebn_meta_from_shop_urls(result_iafd.get('iafd_shops'),
+                                                                    result_iafd.get('iafd_year'))
+
+            # merge dicts into one if exist, else use iafd only
+            result_all = {**result_iafd, **result_aebn} if result_aebn else result_iafd
 
             # update movie record with iafd
-            self.update_movie(r_id, result)
+            self.update_movie(raw_folder, result_all)
 
             # add movie cast to cast table, ignore if already there
-            for actor in result.get('cast'):
-                self.insert_cast(r_id, actor)
+            for actor in result_iafd.get('iafd_cast'):
+                self.insert_cast(raw_folder, actor)
 
             # add movie scenes to scene table, ignore if already there
-            for scene in result.get('scenes'):
+            for scene in result_iafd.get('iafd_scenes'):
                 for actor in scene.get('cast').split(','):
                     actor = {
                         'scene': scene.get('scene'),
                         'cast': actor.strip(),
                     }
-                    self.insert_scene(r_id, actor)
+                    self.insert_scene(raw_folder, actor)
 
             # get row index from clicked card
             ix = self.index(index, 0)
 
             # update movie  # todo include others
             movie = self.movies[index]
-            movie['i_id'] = result.get('id')
-            movie['i_title'] = result.get('title')
-            movie['i_year'] = result.get('year')
-            movie['i_distributor'] = result.get('distributor')
-            movie['i_studio'] = result.get('studio')
-            movie['i_compilation'] = result.get('compilation')
-            movie['i_synopsis'] = result.get('synopsis')
-            movie['i_acts'] = result.get('acts')
+            movie['iafd_title'] = result_all.get('iafd_title')
+            movie['iafd_year'] = result_all.get('iafd_year')
+            movie['iafd_distributor'] = result_all.get('iafd_distributor')
+            movie['iafd_studio'] = result_all.get('iafd_studio')
+            movie['iafd_compilation'] = result_all.get('iafd_compilation')
+            movie['iafd_synopsis'] = result_all.get('iafd_synopsis')
+            movie['iafd_acts'] = result_all.get('iafd_acts')
+            movie['aebn_title'] = result_all.get('aebn_title')
+            movie['aebn_year'] = result_all.get('aebn_year')
+            movie['aebn_series'] = result_all.get('aebn_series')
+            movie['aebn_synopsis'] = result_all.get('aebn_synopsis')
 
             # replace movie row
             self.movies[index] = movie
@@ -293,26 +339,7 @@ class MoviesModel(QAbstractListModel):
 
         else:
             # notify
-            print('No iafd movie metadata found.')
-
-    @Slot(str, str, str)
-    def test(self, main_folder, movie_folder, file):
-        from subprocess import call
-
-        print(main_folder, movie_folder, file)
-
-        filepath = os.path.join(main_folder, movie_folder, file + '.mkv')
-        cmd = r"C:\Program Files\MPC-BE x64\mpc-be64.exe"
-
-        call([cmd, filepath])
-
-    # https://stackoverflow.com/questions/59853985/how-do-to-get-single-item-detail-page-from-listview-page-using-qml todo see here
-    @Slot(int)
-    def get_movie(self, index): #role=Qt.DisplayRole):
-        movie = self.movies[index]
-        movie = {'i_title': 'Tester!!!'}
-
-        return movie
+            print('No movie metadata found.')
 
     @Slot(str)
     def log(self, msg):
@@ -542,7 +569,7 @@ class Worker(QRunnable):
         self.args = args
         self.kwargs = kwargs
 
-    @Slot()
+    #@Slot()
     def run(self):
 
         # todo https://realpython.com/python-pyqt-qthread/#multithreading-the-basics
@@ -580,39 +607,47 @@ def connect_to_db(connection_name=None):
         raise ValueError('Cannot initialise database.')
 
 
-def create_movie_table(db=None):
+def create_movies_table(db=None):
     """
     Check if MOVIE table exists in db, else create one.
     """
 
-    # sql to create movie table
     sql = """
-        CREATE TABLE IF NOT EXISTS MOVIE (
-            r_folder TEXT NOT NULL,
-            r_id TEXT NOT NULL,
-            r_title TEXT NOT NULL,
-            r_year TEXT,
-            i_id TEXT,
-            i_title TEXT,
-            i_year TEXT,
-            i_distributor TEXT,
-            i_studio TEXT,
-            i_compilation TEXT,
-            i_synopsis TEXT, 
-            i_acts TEXT,
-            r_img_cover TEXT,
-            PRIMARY KEY (r_id)
+        CREATE TABLE IF NOT EXISTS MOVIES (
+            raw_folder TEXT NOT NULL,
+            raw_title TEXT NOT NULL,
+            raw_year TEXT,
+            iafd_title TEXT,
+            iafd_year TEXT,
+            iafd_length TEXT,
+            iafd_directors TEXT,
+            iafd_distributor TEXT,
+            iafd_studio TEXT,
+            iafd_all_girl TEXT,
+            iafd_compilation TEXT,
+            iafd_synopsis TEXT,
+            iafd_acts TEXT,
+            aebn_title TEXT,
+            aebn_year TEXT,
+            aebn_series TEXT,
+            aebn_synopsis TEXT,
+            img_fcover_filename TEXT,
+            img_bcover_filename TEXT,
+            vid_filename TEXT,
+            progress TEXT,
+            info_lock TEXT,
+            PRIMARY KEY (raw_folder)
         )
         """
 
     # ok if table exists, if not create it
-    if 'MOVIE' in db.tables():
+    if 'MOVIES' in db.tables():
         return
 
     # if not, attempt to create it
     query = QSqlQuery(db=db)
     if not query.exec(sql):
-        print('Failed to create MOVIE table.')
+        print('Failed to create MOVIES table.')
 
 
 def create_cast_table(db=None):
@@ -648,18 +683,18 @@ def create_movie_cast_table(db=None):
 
     # sql to create movie table
     sql = """
-        CREATE TABLE IF NOT EXISTS MOVIE_CAST (
+        CREATE TABLE IF NOT EXISTS MOVIES_CAST (
             m_id TEXT NOT NULL,
             c_id INTEGER NOT NULL,
             acts TEXT,
             PRIMARY KEY (m_id, c_id),
-            FOREIGN KEY (m_id) REFERENCES MOVIE(r_id),
+            FOREIGN KEY (m_id) REFERENCES MOVIES(raw_folder),
             FOREIGN KEY (c_id) REFERENCES CAST(i_name)
         )
         """
 
     # ok if table exists, if not create it
-    if 'MOVIE_CAST' in db.tables():
+    if 'MOVIES_CAST' in db.tables():
         return
 
     # if not, attempt to create it
@@ -680,7 +715,7 @@ def create_scenes_table(db=None):
             i_scene INTEGER NOT NULL,
             i_cast TEXT NOT NULL,
             PRIMARY KEY (r_id, i_scene, i_cast),
-            FOREIGN KEY (r_id) REFERENCES MOVIE(r_id),
+            FOREIGN KEY (r_id) REFERENCES MOVIES(raw_folder),
             FOREIGN KEY (i_cast) REFERENCES CAST(i_name)
         )
         """
@@ -731,8 +766,7 @@ def sync_db_and_folders(db=None):
     """
 
     # execute query on current database
-    #query = QSqlQuery(query='SELECT * FROM MOVIE ORDER BY r_id', db=db)
-    query = QSqlQuery(query='SELECT r_id FROM MOVIE ORDER BY r_id ASC', db=db)
+    query = QSqlQuery(query='SELECT raw_folder FROM MOVIES ORDER BY raw_folder ASC', db=db)
 
     # get all sql movie rows that exist
     rows = []
@@ -740,7 +774,7 @@ def sync_db_and_folders(db=None):
         rows.append(query.value(0))
 
     # get movie folders, prepend root folder
-    folders = os.listdir(MOVIE_FOLDER)
+    folders = os.listdir(MOVIES_FOLDER)
 
     # if movie folder (r_id) not in db, add it
     for folder in folders:
@@ -756,12 +790,11 @@ def sync_db_and_folders(db=None):
 
             # insert new record
             query_insert = QSqlQuery(db=db)
-            query_insert.prepare('INSERT INTO MOVIE (r_folder, r_id, r_title, r_year) '
-                                 'VALUES (:r_folder, :r_id, :r_title, :r_year)')
-            query_insert.bindValue(':r_folder', MOVIE_FOLDER)
-            query_insert.bindValue(':r_id', folder)
-            query_insert.bindValue(':r_title', raw_title)
-            query_insert.bindValue(':r_year', raw_year)
+            query_insert.prepare('INSERT INTO MOVIES (raw_folder, raw_title, raw_year) '
+                                 'VALUES (:raw_folder, :raw_title, :raw_year)')
+            query_insert.bindValue(':raw_folder', folder)
+            query_insert.bindValue(':raw_title', raw_title)
+            query_insert.bindValue(':raw_year', raw_year)
             query_insert.exec()
 
     # if db row exists but movie folder is gone, remove from db
@@ -773,20 +806,20 @@ def sync_db_and_folders(db=None):
 
             # delete old record
             query_delete = QSqlQuery(db=db)
-            query_delete.prepare("DELETE FROM MOVIE WHERE r_id = :r_id")
-            query_delete.bindValue(':r_id', row)
+            query_delete.prepare("DELETE FROM MOVIES WHERE raw_folder = :raw_folder")
+            query_delete.bindValue(':raw_folder', row)
             query_delete.exec()
 
 
+# todo clean this up
 def sync_covers(db=None):
     """
-
     :param db:
     :return:
     """
 
-    # execute query on current database
-    query = QSqlQuery('SELECT r_id FROM MOVIE ORDER BY r_id ASC')
+    # build and execute query
+    query = QSqlQuery(query='SELECT raw_folder FROM MOVIES ORDER BY raw_folder ASC', db=db)
 
     # get all sql movie rows that exist
     rows = []
@@ -796,7 +829,7 @@ def sync_covers(db=None):
     # read folder, get first cover in order asc
     for row in rows:
         imgs = []
-        files = os.listdir(os.path.join(MOVIE_FOLDER, row))
+        files = os.listdir(os.path.join(MOVIES_FOLDER, row))
 
         # try and get file based on name
         for file in files:
@@ -810,19 +843,58 @@ def sync_covers(db=None):
             imgs.sort()
 
         if len(imgs) > 0:
-            img_cover = os.path.join(os.path.join(MOVIE_FOLDER, row, imgs[0]))
+            img_cover = os.path.join(os.path.join(MOVIES_FOLDER, row, imgs[0]))
 
             # update sql row
             print('Adding movie cover: {}.'.format(img_cover))
-            query_update = QSqlQuery()
-            query_update.prepare('UPDATE MOVIE SET r_img_cover = :r_img_cover WHERE r_id = :r_id')
-            query_update.bindValue(':r_img_cover', img_cover)
-            query_update.bindValue(':r_id', row)
+            query_update = QSqlQuery(db=db)
+            query_update.prepare('UPDATE MOVIES SET img_fcover_filename = :img_fcover_filename '
+                                 'WHERE raw_folder = :raw_folder')
+            query_update.bindValue(':img_fcover_filename', img_cover)
+            query_update.bindValue(':raw_folder', row)
 
             # execute
             query_update.exec()
 
 
-@Slot(str)
-def get_acts_list(acts_as_string):
-    print('hi!')
+class MovieFunctions(QObject):
+
+    @Slot(QObject)
+    def open_movie(self, movie):
+
+        def _open_movie(movie):
+
+            # notify
+            print('Opening movie file.')
+
+            # construct full path
+            root = movie.property('r_folder')
+            folder = movie.property('r_id')
+            #file = movie.property('r_filename')  # todo need filename in table
+            path = os.path.join(root, folder, folder + '.mkv')  # todo folder solution is temp
+
+            # create cmd strign
+            cmd = r"C:\Program Files\MPC-BE x64\mpc-be64.exe"  # todo need to select file from settings table
+
+            # call file
+            call([cmd, path])
+
+        # create worker
+        kwargs = {'movie': movie}
+        worker = Worker(_open_movie, **kwargs)
+
+        # add to app global threadpool
+        QThreadPool.globalInstance().start(worker)
+
+    @Slot(QObject)
+    def open_folder(self, movie):
+
+        # notify
+        print('Opening movie folder.')
+
+        # construct full path
+        folder = movie.property('raw_folder')
+        path = os.path.join(MOVIES_FOLDER, folder)
+
+        # open windows folder
+        os.startfile(path)

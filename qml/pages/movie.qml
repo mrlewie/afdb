@@ -6,23 +6,21 @@ import Qt5Compat.GraphicalEffects
 import "../controls"
 
 Rectangle {
-    property string r_id: ""
+    //property string r_id: ""
     //property string r_title
-    property string r_year
-    property string r_img_cover
-    property string i_title
-    property string i_year
-    property string i_distributor
-    property string i_studio
+    // property string r_year
+    // property string r_img_cover
+    // property string i_title
+    // property string i_year
+    // property string i_distributor
+    // property string i_studio
     //property string i_length
-    property string i_compilation
-    property string i_synopsis
-    property string i_acts
+    // property string i_compilation
+    // property string i_synopsis
+    // property string i_acts
 
     property int inImageWidth: 584 / 4
     property int inImageHeight: 832 / 4
-
-    property int idx
 
     id: content
     anchors.fill: parent
@@ -34,22 +32,6 @@ Rectangle {
     SubBar {
         id: subBar
     }
-
-    //https://stackoverflow.com/questions/59853985/how-do-to-get-single-item-detail-page-from-listview-page-using-qml
-    Item {
-        anchors.fill: subBar
-
-        ListView {
-            anchors.fill: parent
-            model: moviesModel.get(257)
-            delegate:  Text {
-                text: r_title
-            }
-        }
-
-
-    }
-
 
     // scroll area
     ScrollView {
@@ -108,7 +90,7 @@ Rectangle {
                 }
                 inImageWidth: 389
                 inImageHeight: 555
-                inImageSource: r_img_cover
+                inImageSource: movieModel.img_fcover_filename
                 inSourceWidth: 750
                 inSourceHeight: 750
 

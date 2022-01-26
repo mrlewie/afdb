@@ -11,7 +11,7 @@ Window {
     property string backgroundImageUrl: ""
 
     id: mainWindow
-    title: "FilmDB"
+    title: "AFDB"
     width: Screen.width / 2
     height: Screen.height / 2
     color: "#333e54"

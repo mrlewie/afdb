@@ -267,7 +267,7 @@ def get_year_from_movie_html(elem):
     Parse movie release year from an IAFD movie page element.
 
     :param elem: HTML element for a page of HTML.
-    :return: Movie release year as integer, or None if not found.
+    :return: Movie release year as string, or None if not found.
     """
     try:
         # check element
@@ -277,7 +277,7 @@ def get_year_from_movie_html(elem):
             value = elem.find('h1').text.strip().rsplit(' ', 1)[1][1:-1]
             if value:
                 print('Found movie year from IAFD html: {}.'.format(value))
-                return int(value)
+                return value
 
     except:
         print('Error during IAFD movie year extract.')
@@ -299,7 +299,7 @@ def get_length_from_movie_html(elem):
             value = elem.find(class_='bioheading', text='Minutes').nextSibling.text.strip()
             if value:
                 print('Found movie length from IAFD html: {}.'.format(value))
-                return int(value)
+                return value
 
     except:
         print('Error during IAFD movie length extract.')
@@ -317,9 +317,10 @@ def get_directors_from_movie_html(elem):
         # check element
         if elem.find(class_='bioheading', text='Directors'):
 
-            # get director(s) from header, add to list for multiple
+            # get director(s) from header, add to list for multiple, convert to string
             dirs = elem.find(class_='bioheading', text='Directors').nextSibling.find_all('a')
             value = [dir.text.strip() for dir in dirs]
+            value = ','.join(value)
 
             if value:
                 print('Found movie directors from IAFD html: {}.'.format(value))
@@ -395,6 +396,28 @@ def get_compilation_from_movie_html(elem):
 
     except:
         print('Error during IAFD movie compilation extract.')
+        return
+
+
+def get_all_girl_from_movie_html(elem):
+    """
+    Parse movie all girl information from an IAFD movie page element.
+
+    :param elem: HTML element for a page of HTML.
+    :return: Movie all girl as text, or None if not found.
+    """
+    try:
+        # check element
+        if elem.find(class_='bioheading', text='All-Girl'):
+
+            # get all girl from header
+            value = elem.find(class_='bioheading', text='All-Girl').nextSibling.text.strip()
+            if value:
+                print('Found movie all girl from IAFD html: {}.'.format(value))
+                return value
+
+    except:
+        print('Error during IAFD movie all girl extract.')
         return
 
 
@@ -561,9 +584,12 @@ def get_all_acts_from_movie_html(elem):
 
                 # grab and unpack sex acts if exist, else none
                 acts = []
-                if castbox.find_all('br')[-4].nextSibling.text:
-                    acts = castbox.find_all('br')[-4].nextSibling.text.strip().split(' ')
-                    acts = clean_act_names(acts)
+                for sibling in castbox.find('a').next_siblings:
+                    sibling = sibling.text.strip()
+
+                    if sibling != '' and not sibling.startswith('(Credited:'):
+                        acts = sibling.split(' ')
+                        acts = clean_act_names(acts)
 
                 # append to cast
                 all_acts += acts
@@ -575,9 +601,8 @@ def get_all_acts_from_movie_html(elem):
                 all_acts = list(set(all_acts))
                 all_acts.sort()
 
-                # todo - may want a list here for complexity eventually
                 # convert to string
-                all_acts = ', '.join([act for act in all_acts])
+                all_acts = ','.join([act for act in all_acts])
 
                 # gimme it all
                 print('Found all unique acts from IAFD html: {}.'.format(all_acts))
@@ -597,18 +622,20 @@ def get_all_meta_from_movie_html(elem):
     """
     try:
         meta = {
-            'id': get_id_from_movie_html(elem),
-            'title': get_title_from_movie_html(elem),
-            'year': get_year_from_movie_html(elem),
-            'directors': get_directors_from_movie_html(elem),
-            'distributor': get_distributor_from_movie_html(elem),
-            'studio': get_studio_from_movie_html(elem),
-            'compilation': get_compilation_from_movie_html(elem),
-            'synopsis': get_synopsis_from_movie_html(elem),
-            'cast': get_cast_from_movie_html(elem),
-            'scenes': get_scenes_from_movie_html(elem),
-            'shops': get_shops_for_movie_html(elem),
-            'acts': get_all_acts_from_movie_html(elem)
+            #'iafd_id': get_id_from_movie_html(elem),
+            'iafd_title': get_title_from_movie_html(elem),
+            'iafd_year': get_year_from_movie_html(elem),
+            'iafd_length': get_length_from_movie_html(elem),
+            'iafd_directors': get_directors_from_movie_html(elem),
+            'iafd_distributor': get_distributor_from_movie_html(elem),
+            'iafd_studio': get_studio_from_movie_html(elem),
+            'iafd_all_girl': get_all_girl_from_movie_html(elem),
+            'iafd_compilation': get_compilation_from_movie_html(elem),
+            'iafd_synopsis': get_synopsis_from_movie_html(elem),
+            'iafd_acts': get_all_acts_from_movie_html(elem),
+            'iafd_cast': get_cast_from_movie_html(elem),
+            'iafd_scenes': get_scenes_from_movie_html(elem),
+            'iafd_shops': get_shops_for_movie_html(elem)
         }
 
         # notify and return

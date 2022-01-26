@@ -5,6 +5,8 @@ import Qt5Compat.GraphicalEffects
 
 //https://fonts.google.com/icons?selected=Material+Icons&icon.query=dots
 
+
+
 // movie card that shows cover image, title and year
 Rectangle {
     property string inMovieTitle: ""
@@ -412,8 +414,114 @@ Rectangle {
 
 }
 
-/*##^##
-Designer {
-    D{i:0;height:350;width:400}
-}
-##^##*/
+// THIS IS THE NEW CODE FOR MOVIES CARDS, BASED ON MOVIE CARD
+// import QtQuick 2.15
+// import QtQuick.Controls 2.15
+// import QtQuick.Layouts 2.15
+// import Qt5Compat.GraphicalEffects
+//
+// // details grid: cover image
+// Item {
+//   property string imageSource
+//   property int imageSourceWidth
+//   property int imageSourceHeight
+//
+//   id: movieCardContainer
+//   width: imageSourceWidth
+//   height: imageSourceHeight
+//
+//   Rectangle {
+//     anchors.fill: movieDetailsCoverImage
+//     color: "black"
+//     opacity: 0.75
+//     radius: 5
+//     layer {
+//       enabled: true
+//       effect: DropShadow {
+//         transparentBorder: true
+//         horizontalOffset: 2
+//         verticalOffset: 2
+//         radius: 10
+//       }
+//     }
+//   }
+//
+//   Image {
+//     id: movieCardImage
+//     anchors.fill: parent
+//     source: imageSource
+//     sourceSize {
+//       width: imageSourceWidth
+//       height: imageSourceHeight
+//     }
+//     fillMode: Image.PreserveAspectCrop
+//     smooth: true
+//     asynchronous: true
+//     cache: true
+//     layer {
+//       enabled: true
+//       effect: OpacityMask {
+//         maskSource: Rectangle {
+//           width: movieCardImage.width
+//           height: movieCardImage.height
+//           radius: 5
+//           visible: false
+//         }
+//       }
+//     }
+//
+//     //Component.onCompleted: cardImageLoaded.start()
+//
+//   }
+//
+//   MouseArea {
+//     id: movieCardMouseAreaOuter
+//     anchors.fill: parent
+//     cursorShape: Qt.PointingHandCursor
+//     hoverEnabled: true
+//
+//     MouseArea {
+//       id: iconTopLeftMouseArea
+//       width: 50
+//       height: 50
+//       anchors {
+//         top: parent.top
+//         left: parent.left
+//       }
+//       cursorShape: Qt.PointingHandCursor
+//       hoverEnabled: true
+//
+//       //onClicked: {}
+//     }
+//   }
+//
+//   Rectangle {
+//     id: movieCardBorderBorderFillIcons
+//     anchors.fill: parent
+//     color: "#A6000000"
+//     border {
+//       width: 3
+//       color: "#d05158"
+//     }
+//     radius: 5
+//     opacity: movieCardMouseAreaOuter.containsMouse ? 1.0 : 0.0
+//
+//     Item {
+//       id: iconTopLeftContainer
+//       width: 50
+//       height: 50
+//       anchors.fill: iconTopLeftMouseArea
+//
+//       Image {
+//         id: iconTopLeft
+//         anchors.centerIn: parent
+//         source: "../../images/svg_images/edit.svg"
+//         sourceSize {
+//           width: 30
+//           height: 30
+//         }
+//         opacity: iconTopLeftMouseArea.containsMouse ? 1.0 : 0.75
+//       }
+//     }
+//   }
+// }
