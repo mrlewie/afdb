@@ -31,8 +31,6 @@ if __name__ == "__main__":
     data.sync_covers(db=db)
     db.close()
 
-    ...
-
     # connect to db and get tables
     movies = MoviesModel()
     cast = CastModel()
