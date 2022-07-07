@@ -469,10 +469,13 @@ def get_cast_from_movie_html(elem):
                 img_url = None if 'nophoto' in img_url else img_url
 
                 # grab and unpack sex acts if exist, else none
-                acts = None
-                if castbox.find_all('br')[-4].nextSibling.text:
-                    acts = castbox.find_all('br')[-4].nextSibling.text.strip().split(' ')
-                    acts = clean_act_names(acts)
+                acts = []
+                for sibling in castbox.find('a').next_siblings:
+                    sibling = sibling.text.strip()
+
+                    if sibling != '' and not sibling.startswith('(Credited:'):
+                        acts = sibling.split(' ')
+                        acts = clean_act_names(acts)
 
                 # create actor dictionary
                 actor = {

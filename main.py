@@ -1,8 +1,8 @@
 import sys
 
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
+
 from scripts import data
 from scripts.data import MoviesModel, CastModel, ScenesModel
 from scripts.data import MovieFunctions
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     db = data.connect_to_db('db_init')
     data.create_movies_table(db=db)
     data.create_cast_table(db=db)
-    data.create_movie_cast_table(db=db)
+    data.create_movies_cast_table(db=db)
     data.create_scenes_table(db=db)
     data.create_scenes_view(db=db)
     data.sync_db_and_folders(db=db)

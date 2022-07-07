@@ -26,7 +26,6 @@ Window {
         fillMode: Image.PreserveAspectCrop
         z: 0
 
-        // enable effects
         layer.enabled: true
         layer.effect:
 
@@ -57,6 +56,7 @@ Window {
             left: sideMenu.right
             right: parent.right
         }
-        source: "pages/movies_stack.qml"
+        source: "pages/home.qml"
+        //source: "pages/movies_stack.qml"
     }
 }

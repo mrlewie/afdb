@@ -8,4 +8,3 @@ StackView {
   initialItem: "movies.qml"
   clip: true
 }
-

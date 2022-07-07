@@ -205,7 +205,7 @@ class MoviesModel(QAbstractListModel):
 
         # associate actor and acts with movie
         query = QSqlQuery(db=db)
-        query.prepare('INSERT OR IGNORE INTO MOVIE_CAST (m_id, c_id, acts) '
+        query.prepare('INSERT OR IGNORE INTO MOVIES_CAST (m_id, c_id, acts) '
                       'VALUES (:m_id, :c_id, :acts)')
         query.bindValue(':m_id', r_id)
         query.bindValue(':c_id', actor.get('name'))
@@ -400,7 +400,7 @@ class CastModel(QAbstractListModel):
         # query db
         query = QSqlQuery(db=db)
         query.prepare('SELECT C.* '
-                      'FROM MOVIE_CAST MC, CAST C '
+                      'FROM MOVIES_CAST MC, CAST C '
                       'WHERE MC.m_id = :r_id AND '
                       'MC.c_id = C.i_name '
                       'ORDER BY C.i_gender, C.i_name')
@@ -676,7 +676,7 @@ def create_cast_table(db=None):
         print('Failed to create CAST table.')
 
 
-def create_movie_cast_table(db=None):
+def create_movies_cast_table(db=None):
     """
     Check if MOVIE-CAST M:N table exists in db, else create one.
     """
@@ -700,7 +700,7 @@ def create_movie_cast_table(db=None):
     # if not, attempt to create it
     query = QSqlQuery(db=db)
     if not query.exec(sql):
-        print('Failed to create MOVIE_CAST table.')
+        print('Failed to create MOVIES_CAST table.')
 
 
 def create_scenes_table(db=None):
@@ -738,7 +738,7 @@ def create_scenes_view(db=None):
     sql = """
         CREATE VIEW SCENES_VIEW AS
         SELECT S.r_id, S.i_scene, S.i_cast, C.i_gender, C.i_img_url, MC.acts
-        FROM SCENES S, CAST C, MOVIE_CAST MC
+        FROM SCENES S, CAST C, MOVIES_CAST MC
         WHERE C.i_name = S.i_cast AND
               (MC.m_id = S.r_id AND MC.c_id = C.i_name)
         """
@@ -898,3 +898,4 @@ class MovieFunctions(QObject):
 
         # open windows folder
         os.startfile(path)
+
